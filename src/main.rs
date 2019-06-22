@@ -1,95 +1,39 @@
+extern crate clap;
+
+use clap::{App, Arg};
+
 use std::io;
-use std::io::{BufReader, BufRead, Read, Write};
-use std::collections::HashSet;
+use std::path::Path;
+use dedup_cli::dedup_with_params;
 
 fn main() {
-    match dedup(&mut io::stdin(), &mut io::stdout()) {
-        Ok(_) => {}
-        Err(err) => {
-            eprintln!("Problem parsing arguments: {}", err);
-            std::process::exit(1)
-        }
+    let args = App::new("dedup")
+        .help("Deduplicates the input, writing non-duplicate lines as they appear.")
+        .arg(Arg::with_name("INPUT")
+            .help("File to be deduplicated. '-' for stdin")
+            .index(1)
+            .required(true)
+            .validator(exists_or_dash)
+            .default_value(dedup_cli::FROM_STDIN))
+        .arg(Arg::with_name("OUTPUT")
+            .help("Output file. '-' for stdout")
+            .index(2)
+            .required(true)
+            .default_value(dedup_cli::TO_STDOUT)).get_matches();
+
+    let input_param = args.value_of("INPUT").unwrap();
+    let output_param = args.value_of("OUTPUT").unwrap();
+
+    if let Err(err) = dedup_with_params(input_param, output_param, &mut io::stdin(), &mut io::stdout()) {
+        eprintln!("{}", err);
+        std::process::exit(1)
     }
 }
 
-fn dedup(input: &mut Read, output: &mut Write) -> io::Result<()> {
-    let mut bf = BufReader::new(input);
-    let mut seen = HashSet::new();
-    loop {
-        let mut buf = String::new();
-        let out = bf.read_line(&mut buf);
-        let b = Box::new(buf);
-        match out {
-            Ok(0) => { return Ok(()); }
-            Ok(_) => if !seen.contains(&b) {
-                match output.write_all(b.as_bytes()) {
-                    Ok(_) => {
-                        seen.insert(b);
-                    }
-                    Err(err) => { return Err(err); }
-                }
-            },
-            Err(err) => { return Err(err); }
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_empty() {
-        let mut input = "".as_bytes();
-        let mut output = Vec::new();
-
-        let out = dedup(&mut input, &mut output);
-
-        assert!(out.is_ok());
-        assert_eq!(String::from_utf8(output).unwrap(), "")
-    }
-
-    #[test]
-    fn test_single_line() {
-        let mut input = "test".as_bytes();
-        let mut output = Vec::new();
-
-        let out = dedup(&mut input, &mut output);
-
-        assert!(out.is_ok());
-        assert_eq!(String::from_utf8(output).unwrap(), "test")
-    }
-
-    #[test]
-    fn test_two_different_lines() {
-        let mut input = "test\ntest2".as_bytes();
-        let mut output = Vec::new();
-
-        let out = dedup(&mut input, &mut output);
-
-        assert!(out.is_ok());
-        assert_eq!(String::from_utf8(output).unwrap(), "test\ntest2")
-    }
-
-    #[test]
-    fn test_two_identical_lines() {
-        let mut input = "test\ntest\n".as_bytes();
-        let mut output = Vec::new();
-
-        let out = dedup(&mut input, &mut output);
-
-        assert!(out.is_ok());
-        assert_eq!(String::from_utf8(output).unwrap(), "test\n")
-    }
-
-    #[test]
-    fn test_two_separated_identical_lines() {
-        let mut input = "test\ntest1\ntest\n".as_bytes();
-        let mut output = Vec::new();
-
-        let out = dedup(&mut input, &mut output);
-
-        assert!(out.is_ok());
-        assert_eq!(String::from_utf8(output).unwrap(), "test\ntest1\n")
-    }
+fn exists_or_dash(v: String) -> Result<(), String> {
+    return if v.as_str() == dedup_cli::FROM_STDIN || Path::new(&v).exists() {
+        Ok(())
+    } else {
+        Err(String::from("file does not exist"))
+    };
 }
