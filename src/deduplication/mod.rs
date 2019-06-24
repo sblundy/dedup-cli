@@ -11,26 +11,31 @@ pub fn dedup(input: &mut Read, output: &mut Write) -> io::Result<()> {
         let out = read_to_separator_or_end(&mut split_itr, &mut buf);
 
         match out {
-            Ok((0, _)) => { return Ok(()); }
-            Ok((_, sep)) => if !seen.contains(&buf) {
-                match output.write_all(&buf) {
-                    Ok(_) => { seen.insert(buf); }
-                    Err(err) => { return Err(err); }
-                }
+            Ok((0, _)) => return Ok(()),
+            Ok((_, sep)) => {
+                if !seen.contains(&buf) {
+                    match output.write_all(&buf) {
+                        Ok(_) => seen.insert(buf),
+                        Err(err) => return Err(err),
+                    }
 
-                if let Some(s) = sep {
-                    let b = [s];
-                    if let Err(err) = output.write(&b) {
-                        return Err(err);
+                    if let Some(s) = sep {
+                        let b = [s];
+                        if let Err(err) = output.write(&b) {
+                            return Err(err);
+                        }
                     }
                 }
             }
-            Err(err) => { return Err(err); }
+            Err(err) => return Err(err),
         }
     }
 }
 
-fn read_to_separator_or_end(bf: &mut io::Bytes<BufReader<&mut Read>>, buf: &mut Vec<u8>) -> io::Result<(usize, Option<u8>)> {
+fn read_to_separator_or_end(
+    bf: &mut io::Bytes<BufReader<&mut Read>>,
+    buf: &mut Vec<u8>,
+) -> io::Result<(usize, Option<u8>)> {
     let mut num = 0;
     loop {
         match bf.next() {
@@ -39,8 +44,8 @@ fn read_to_separator_or_end(bf: &mut io::Bytes<BufReader<&mut Read>>, buf: &mut 
             Some(Ok(next)) => {
                 buf.push(next);
                 num += 1;
-            },
-            Some(Err(err)) => return Err(err)
+            }
+            Some(Err(err)) => return Err(err),
         }
     }
 }
