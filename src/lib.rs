@@ -2,15 +2,12 @@ use std::io;
 use std::fs::File;
 use crate::deduplication::dedup;
 
-pub const FROM_STDIN: &str = "-";
-pub const TO_STDOUT: &str = "-";
-
-pub fn dedup_with_params(input: &str, output: &str, stdin: &mut io::Read, stdout: &mut io::Write) -> io::Result<()> {
+pub fn dedup_with_params(input: Option<&str>, output: Option<&str>, stdin: &mut io::Read, stdout: &mut io::Write) -> io::Result<()> {
     return match (input, output) {
-        (FROM_STDIN, TO_STDOUT) => dedup(stdin, stdout),
-        (input_file_name, TO_STDOUT) => dedup_file_to(input_file_name, stdout),
-        (FROM_STDIN, output_file_name) => dedup_to_file(stdin, output_file_name),
-        (input_file_name, output_file_name) =>
+        (None, None) => dedup(stdin, stdout),
+        (Some(input_file_name), None) => dedup_file_to(input_file_name, stdout),
+        (None, Some(output_file_name)) => dedup_to_file(stdin, output_file_name),
+        (Some(input_file_name), Some(output_file_name)) =>
             dedup_file_to_file(input_file_name, output_file_name),
     };
 }
