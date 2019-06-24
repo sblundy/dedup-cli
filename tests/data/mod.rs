@@ -14,7 +14,7 @@ pub fn all_duplicates_file() -> NamedTempFile {
 
 pub fn test_file(name: &str, contents: &str) -> NamedTempFile {
     let f = NamedTempFile::new(name).unwrap();
-    f.write_str(contents);
+    f.write_str(contents).expect("write of contents failed");
     return f;
 }
 

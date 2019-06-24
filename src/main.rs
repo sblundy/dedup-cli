@@ -21,9 +21,8 @@ fn main() {
             .long("output")).get_matches();
 
     let input_param = match args.value_of("INPUT") {
-        Some(FROM_STDIN) => None,
+        Some(FROM_STDIN) | None => None,
         Some(file) => Some(file),
-        None => None,
     };
     let output_param = args.value_of("OUTPUT");
 
@@ -33,10 +32,11 @@ fn main() {
     }
 }
 
+#[allow(clippy::needless_pass_by_value)]
 fn exists_or_dash(v: String) -> Result<(), String> {
-    return if v.as_str() == FROM_STDIN || Path::new(&v).exists() {
+    if v.as_str() == FROM_STDIN || Path::new(&v).exists() {
         Ok(())
     } else {
         Err(String::from("file does not exist"))
-    };
+    }
 }

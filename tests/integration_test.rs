@@ -45,7 +45,7 @@ fn deduplicates_stream_to_file() {
     let output = target.path().to_str();
     assert!(output.is_some());
 
-    let mut dummy_stdin = include_str!("data/all_duplicates.txt");
+    let dummy_stdin = include_str!("data/all_duplicates.txt");
 
     let out = dedup_with_params(None, output,
                                 &mut dummy_stdin.as_bytes(), &mut io::stdout());
