@@ -15,7 +15,7 @@ pub fn dedup(input: &mut Read, output: &mut Write) -> io::Result<()> {
             Ok((_, sep)) => {
                 if !seen.contains(&buf) {
                     match output.write_all(&buf) {
-                        Ok(_) => seen.insert(buf),
+                        Ok(_) => { seen.insert(buf); }
                         Err(err) => return Err(err),
                     }
 
