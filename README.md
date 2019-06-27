@@ -13,7 +13,11 @@ subsequent ones as they appear.
 
 ## Installation
 
-_TBD_
+Currently, the easiest way to install is via cargo. Checkout the project and run `cargo install`.
+
+```bash
+cargo install -path .
+```
 
 ## Usage
 
